@@ -5,14 +5,13 @@ import { LayoutDashboard, BookOpen, MessageCircle, Leaf, Settings, X } from "luc
 import type { UserProfile } from "@/types";
 import type { AppTab } from "./AppShell";
 import { cn, daysUntilExam } from "@/lib/utils";
-import { storageSet } from "@/lib/storage";
 import { storageClearAll } from "@/lib/storage";
 
 type NavigationProps = {
   readonly profile: UserProfile;
   readonly activeTab: AppTab;
   readonly onTabChange: (tab: AppTab) => void;
-  readonly onProfileUpdate: (profile: UserProfile) => void;
+  readonly onProfileUpdate: (_profile: UserProfile) => void;
 };
 
 const NAV_ITEMS: Array<{ id: AppTab; label: string; Icon: typeof LayoutDashboard }> = [
@@ -26,7 +25,6 @@ export default function Navigation({
   profile,
   activeTab,
   onTabChange,
-  onProfileUpdate,
 }: NavigationProps) {
   const [showSettings, setShowSettings] = useState(false);
   const daysLeft = daysUntilExam(profile.examDate);
@@ -58,7 +56,7 @@ export default function Navigation({
           </div>
 
           <nav aria-label="Primary navigation">
-            <ul className="flex gap-1" role="list">
+            <ul className="flex gap-1">
               {NAV_ITEMS.map(({ id, label, Icon }) => (
                 <li key={id}>
                   <button
@@ -101,11 +99,10 @@ export default function Navigation({
 
       {/* Mobile bottom nav */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md
-                   border-t border-zen-100 safe-area-bottom"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-t border-zen-100"
         aria-label="Primary navigation"
       >
-        <ul className="flex" role="list">
+        <ul className="flex">
           {NAV_ITEMS.map(({ id, label, Icon }) => (
             <li key={id} className="flex-1">
               <button
@@ -151,9 +148,7 @@ export default function Navigation({
 
             <div className="space-y-4">
               <div className="text-sm text-slate-600">
-                <p className="font-medium text-slate-800 mb-1">
-                  {profile.displayName}
-                </p>
+                <p className="font-medium text-slate-800 mb-1">{profile.displayName}</p>
                 <p className="text-slate-500">{profile.examType} aspirant</p>
               </div>
 

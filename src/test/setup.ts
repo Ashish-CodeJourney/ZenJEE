@@ -28,6 +28,9 @@ Object.defineProperty(window, "localStorage", {
   writable: true,
 });
 
+// scrollIntoView is not implemented in jsdom
+Element.prototype.scrollIntoView = vi.fn();
+
 // Reset mocks between tests
 beforeEach(() => {
   localStorageMock.clear();

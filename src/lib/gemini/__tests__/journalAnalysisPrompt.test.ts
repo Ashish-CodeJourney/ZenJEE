@@ -30,7 +30,8 @@ describe("buildJournalAnalysisPrompt", () => {
   });
 
   it("defaults exam type to 'competitive exam' when not provided", () => {
-    const { examType: _examType, ...rest } = BASE_PARAMS;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { examType: _omit, ...rest } = BASE_PARAMS;
     const prompt = buildJournalAnalysisPrompt(rest);
     expect(prompt).toContain("competitive exam");
   });

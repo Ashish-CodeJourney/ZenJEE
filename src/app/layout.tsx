@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -7,10 +14,10 @@ export const metadata: Metadata = {
     template: "%s | ZenJEE",
   },
   description:
-    "AI-powered mental wellness companion for JEE, NEET, CUET, CAT, GATE, and UPSC aspirants. Journal your journey, track your mood, and get personalised coping support.",
+    "AI-powered mental wellness companion for JEE, NEET, CUET, CAT, GATE, and UPSC aspirants.",
   keywords: ["mental wellness", "JEE", "NEET", "exam stress", "mindfulness", "AI companion"],
   authors: [{ name: "ZenJEE" }],
-  robots: { index: false, follow: false }, // private wellness app — not for indexing
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
@@ -21,17 +28,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { readonly children: React.ReactNode }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={`${inter.variable} scroll-smooth`}>
       <body className="font-sans antialiased">
-        {/* Skip-to-main link for keyboard/screen reader users */}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50
@@ -40,7 +38,6 @@ export default function RootLayout({ children }: { readonly children: React.Reac
         >
           Skip to main content
         </a>
-
         <div id="main-content" role="main">
           {children}
         </div>
