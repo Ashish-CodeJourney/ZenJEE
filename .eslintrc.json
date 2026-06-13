@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript",
+    "plugin:jsx-a11y/strict"
+  ],
+  "plugins": ["jsx-a11y"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    "prefer-const": "error",
+    "no-var": "error",
+    "jsx-a11y/anchor-is-valid": "error",
+    "jsx-a11y/no-autofocus": "off"
+  }
+}
