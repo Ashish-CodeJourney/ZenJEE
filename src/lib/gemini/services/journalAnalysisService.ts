@@ -29,8 +29,8 @@ export async function analyseJournal(params: AnalyseJournalParams): Promise<Jour
     model: GEMINI_MODELS.analysis,
     generationConfig: {
       responseMimeType: "application/json",
-      temperature: 0.4, // lower temp = more consistent structured output
-      maxOutputTokens: 1500,
+      temperature: 0.4,
+      maxOutputTokens: 8192,
     },
   });
 
@@ -74,9 +74,15 @@ function parseAnalysisResponse(raw: string): JournalAnalysis {
   };
 }
 
+function parseLiteral<T extends string>(raw: unknown, valid: readonly T[], fallback: T): T {
+  if (typeof raw === "string" && (valid as readonly string[]).includes(raw)) {
+    return raw as T;
+  }
+  return fallback;
+}
+
 function parseSentiment(raw: unknown): JournalAnalysis["sentiment"] {
-  if (raw === "negative" || raw === "neutral" || raw === "positive") return raw;
-  return "neutral";
+  return parseLiteral(raw, ["negative", "neutral", "positive"] as const, "neutral");
 }
 
 function parseClampedFloat(raw: unknown, fallback: number): number {
@@ -95,29 +101,22 @@ function parseString(raw: unknown, fallback: string): string {
   return typeof raw === "string" && raw.trim().length > 0 ? raw.trim() : fallback;
 }
 
+const SEVERITY_VALUES = ["mild", "moderate", "high"] as const;
+const TRIGGER_CATEGORY_VALUES = ["academic", "social", "self-doubt", "physical", "family", "time-management", "other"] as const;
+const FREQUENCY_VALUES = ["occasional", "recurring", "persistent"] as const;
+const COPING_CATEGORY_VALUES = ["breathing", "mindfulness", "physical", "cognitive", "social", "creative"] as const;
+const MINDFULNESS_TYPE_VALUES = ["breathing", "meditation", "grounding", "visualization", "movement"] as const;
+
 function parseStressTriggers(raw: unknown): JournalAnalysis["stressTriggers"] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
     .map((item) => ({
       trigger: parseString(item["trigger"], "Unknown trigger"),
-      severity: parseSeverity(item["severity"]),
-      category: parseTriggerCategory(item["category"]),
+      severity: parseLiteral(item["severity"], SEVERITY_VALUES, "moderate"),
+      category: parseLiteral(item["category"], TRIGGER_CATEGORY_VALUES, "other"),
     }))
-    .slice(0, 6); // cap to prevent runaway output
-}
-
-function parseSeverity(raw: unknown): "mild" | "moderate" | "high" {
-  if (raw === "mild" || raw === "moderate" || raw === "high") return raw;
-  return "moderate";
-}
-
-function parseTriggerCategory(raw: unknown): "academic" | "social" | "self-doubt" | "physical" | "family" | "time-management" | "other" {
-  const valid = ["academic", "social", "self-doubt", "physical", "family", "time-management", "other"] as const;
-  if (typeof raw === "string" && (valid as readonly string[]).includes(raw)) {
-    return raw as typeof valid[number];
-  }
-  return "other";
+    .slice(0, 6);
 }
 
 function parseEmotionalPatterns(raw: unknown): JournalAnalysis["emotionalPatterns"] {
@@ -126,14 +125,9 @@ function parseEmotionalPatterns(raw: unknown): JournalAnalysis["emotionalPattern
     .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
     .map((item) => ({
       pattern: parseString(item["pattern"], "Unknown pattern"),
-      frequency: parseFrequency(item["frequency"]),
+      frequency: parseLiteral(item["frequency"], FREQUENCY_VALUES, "occasional"),
     }))
     .slice(0, 4);
-}
-
-function parseFrequency(raw: unknown): "occasional" | "recurring" | "persistent" {
-  if (raw === "occasional" || raw === "recurring" || raw === "persistent") return raw;
-  return "occasional";
 }
 
 function parseCopingStrategies(raw: unknown): JournalAnalysis["copingStrategies"] {
@@ -145,18 +139,10 @@ function parseCopingStrategies(raw: unknown): JournalAnalysis["copingStrategies"
       title: parseString(item["title"], "Take a break"),
       description: parseString(item["description"], ""),
       estimatedMinutes: parsePositiveInt(item["estimatedMinutes"], 10),
-      category: parseCopingCategory(item["category"]),
+      category: parseLiteral(item["category"], COPING_CATEGORY_VALUES, "mindfulness"),
       steps: parseStringArray(item["steps"]),
     }))
     .slice(0, 4);
-}
-
-function parseCopingCategory(raw: unknown): "breathing" | "mindfulness" | "physical" | "cognitive" | "social" | "creative" {
-  const valid = ["breathing", "mindfulness", "physical", "cognitive", "social", "creative"] as const;
-  if (typeof raw === "string" && (valid as readonly string[]).includes(raw)) {
-    return raw as typeof valid[number];
-  }
-  return "mindfulness";
 }
 
 function parseMindfulnessExercise(raw: unknown): JournalAnalysis["mindfulnessExercise"] {
@@ -169,17 +155,9 @@ function parseMindfulnessExercise(raw: unknown): JournalAnalysis["mindfulnessExe
     title: parseString(obj["title"], "Box Breathing"),
     description: parseString(obj["description"], "A calming breathing technique"),
     durationMinutes: parsePositiveInt(obj["durationMinutes"], 5),
-    type: parseMindfulnessType(obj["type"]),
+    type: parseLiteral(obj["type"], MINDFULNESS_TYPE_VALUES, "breathing"),
     instructions: parseStringArray(obj["instructions"]),
   };
-}
-
-function parseMindfulnessType(raw: unknown): "breathing" | "meditation" | "grounding" | "visualization" | "movement" {
-  const valid = ["breathing", "meditation", "grounding", "visualization", "movement"] as const;
-  if (typeof raw === "string" && (valid as readonly string[]).includes(raw)) {
-    return raw as typeof valid[number];
-  }
-  return "breathing";
 }
 
 function parsePositiveInt(raw: unknown, fallback: number): number {

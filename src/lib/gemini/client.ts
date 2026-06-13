@@ -9,10 +9,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Models used across the app — centralised so a version bump is one-line.
 export const GEMINI_MODELS = {
-  // Fast model with JSON mode support — used for structured journal analysis.
-  analysis: "gemini-1.5-flash",
-  // Same model for chat — generous context window fits conversation history.
-  chat: "gemini-1.5-flash",
+  analysis: "gemini-2.5-flash",
+  chat: "gemini-2.5-flash",
 } as const;
 
 let _client: GoogleGenerativeAI | null = null;
