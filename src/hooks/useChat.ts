@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
-import type { ChatMessage, ChatSession, UserProfile } from "@/types";
+import type { ChatMessage, ChatSession, MoodScore, UserProfile } from "@/types";
 import type { ChatResponse } from "@/types";
 
 export type ChatHook = {
@@ -17,7 +17,7 @@ function newSession(): ChatSession {
   return { id: uuidv4(), messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 }
 
-export function useChat(profile: UserProfile, recentMoodScore?: number): ChatHook {
+export function useChat(profile: UserProfile, recentMoodScore?: MoodScore): ChatHook {
   const [session, setSession] = useState<ChatSession>(newSession);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);

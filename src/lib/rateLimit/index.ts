@@ -38,7 +38,7 @@ export function checkRateLimit(
     return { allowed: false, retryAfterMs: entry.resetAt - now };
   }
 
-  entry.count += 1;
+  store.set(identifier, { ...entry, count: entry.count + 1 });
   return { allowed: true };
 }
 

@@ -11,7 +11,7 @@ type NavigationProps = {
   readonly profile: UserProfile;
   readonly activeTab: AppTab;
   readonly onTabChange: (tab: AppTab) => void;
-  readonly onProfileUpdate: (_profile: UserProfile) => void;
+  readonly onProfileUpdate: (profile: UserProfile) => void;
 };
 
 const NAV_ITEMS: Array<{ id: AppTab; label: string; Icon: typeof LayoutDashboard }> = [

@@ -30,6 +30,15 @@ const COLOR_MAP = {
   movement: "bg-orange-50 text-orange-600 border-orange-200",
 } as const;
 
+const FILTER_TYPES: Array<{ value: Exercise["type"] | "all"; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "breathing", label: "Breathing" },
+  { value: "grounding", label: "Grounding" },
+  { value: "meditation", label: "Meditation" },
+  { value: "movement", label: "Movement" },
+  { value: "visualization", label: "Visualisation" },
+];
+
 const EXERCISES: readonly Exercise[] = [
   {
     id: "box-breathing",
@@ -148,15 +157,6 @@ export default function MindfulnessView() {
     setActiveId(null);
   };
 
-  const types: Array<{ value: Exercise["type"] | "all"; label: string }> = [
-    { value: "all", label: "All" },
-    { value: "breathing", label: "Breathing" },
-    { value: "grounding", label: "Grounding" },
-    { value: "meditation", label: "Meditation" },
-    { value: "movement", label: "Movement" },
-    { value: "visualization", label: "Visualisation" },
-  ];
-
   return (
     <div className="space-y-5">
       <div>
@@ -172,7 +172,7 @@ export default function MindfulnessView() {
         role="group"
         aria-label="Filter exercises by type"
       >
-        {types.map(({ value, label }) => (
+        {FILTER_TYPES.map(({ value, label }) => (
           <button
             key={value}
             onClick={() => setFilter(value)}

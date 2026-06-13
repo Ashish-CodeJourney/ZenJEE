@@ -35,13 +35,11 @@ export default function Dashboard({ profile, onNavigate }: DashboardProps) {
   // Streak = consecutive days with an entry up to today
   const streak = useMemo(() => {
     const dates = new Set(entries.map((e) => e.date));
+    const msPerDay = 86_400_000;
+    const today = Date.now();
     let count = 0;
-    const d = new Date();
-    while (true) {
-      const iso = d.toISOString().split("T")[0]!;
-      if (!dates.has(iso)) break;
+    while (dates.has(new Date(today - count * msPerDay).toISOString().split("T")[0]!)) {
       count++;
-      d.setDate(d.getDate() - 1);
     }
     return count;
   }, [entries]);

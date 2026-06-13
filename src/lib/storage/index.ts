@@ -59,10 +59,7 @@ export function storageRemove(key: StorageKey): void {
 export function storageClearAll(): void {
   if (typeof window === "undefined") return;
 
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const k = window.localStorage.key(i);
-    if (k?.startsWith("zenjee:")) keysToRemove.push(k);
-  }
-  keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+  Array.from({ length: window.localStorage.length }, (_, i) => window.localStorage.key(i))
+    .filter((k): k is string => k?.startsWith("zenjee:") ?? false)
+    .forEach((k) => window.localStorage.removeItem(k));
 }

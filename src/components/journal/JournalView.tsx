@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Sparkles, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { UserProfile, MoodScore, JournalAnalysis } from "@/types";
 import type { AnalyzeJournalResponse } from "@/types";
@@ -14,7 +14,6 @@ import { moodLabelToEmoji } from "@/lib/utils";
 type JournalViewProps = { readonly profile: UserProfile };
 
 const DEBOUNCE_MS = 500;
-let debounceTimer: ReturnType<typeof setTimeout>;
 
 export default function JournalView({ profile: _ }: JournalViewProps) {
   const { entries, todayEntry, isSaving, saveEntry, attachAnalysis, deleteEntry } = useJournal();
@@ -25,6 +24,7 @@ export default function JournalView({ profile: _ }: JournalViewProps) {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [charCount, setCharCount] = useState(todayEntry?.content.length ?? 0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleContentChange = (val: string) => {
     setContent(val);
@@ -65,9 +65,9 @@ export default function JournalView({ profile: _ }: JournalViewProps) {
   // Debounced auto-save (content only, no analysis on every keystroke)
   const handleAutoSave = useCallback(
     (val: string) => {
-      clearTimeout(debounceTimer);
+      clearTimeout(debounceRef.current);
       if (val.trim().length < 10) return;
-      debounceTimer = setTimeout(() => {
+      debounceRef.current = setTimeout(() => {
         saveEntry({ date: todayISO(), content: val.trim(), moodScore, tags: [] });
       }, DEBOUNCE_MS);
     },

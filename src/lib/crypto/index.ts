@@ -22,21 +22,19 @@ const STORAGE_KEY = "zenjee:crypto:keyMaterial";
 // Internal helpers
 // -----------------------------------------------------------------------------
 
+const fromBase64 = (b64: string): Uint8Array<ArrayBuffer> =>
+  new Uint8Array([...atob(b64)].map((c) => c.charCodeAt(0)));
+
 async function getOrCreateKeyMaterial(): Promise<CryptoKey> {
   const stored = localStorage.getItem(STORAGE_KEY);
 
   if (stored) {
-    const decoded = atob(stored);
-    const raw = new Uint8Array(new ArrayBuffer(decoded.length));
-    for (let i = 0; i < decoded.length; i++) raw[i] = decoded.charCodeAt(i);
-    return crypto.subtle.importKey("raw", raw, { name: ALGORITHM }, false, KEY_USAGE);
+    return crypto.subtle.importKey("raw", fromBase64(stored), { name: ALGORITHM }, false, KEY_USAGE);
   }
 
   const key = await crypto.subtle.generateKey({ name: ALGORITHM, length: 256 }, true, KEY_USAGE);
   const exported = await crypto.subtle.exportKey("raw", key);
-  const base64 = btoa(
-    Array.from(new Uint8Array(exported), (b) => String.fromCharCode(b)).join("")
-  );
+  const base64 = btoa(Array.from(new Uint8Array(exported), (b) => String.fromCharCode(b)).join(""));
   localStorage.setItem(STORAGE_KEY, base64);
   return key;
 }
@@ -66,11 +64,9 @@ export async function encrypt(plaintext: string): Promise<string> {
     const encoded = new TextEncoder().encode(plaintext);
     const ciphertext = await crypto.subtle.encrypt({ name: ALGORITHM, iv }, key, encoded);
 
-    const ivBase64 = btoa(Array.from(iv, (b) => String.fromCharCode(b)).join(""));
-    const ciphertextBase64 = btoa(
-      Array.from(new Uint8Array(ciphertext), (b) => String.fromCharCode(b)).join("")
-    );
-    return `${ivBase64}.${ciphertextBase64}`;
+    const toBase64 = (buf: Uint8Array) =>
+      btoa(Array.from(buf, (b) => String.fromCharCode(b)).join(""));
+    return `${toBase64(iv)}.${toBase64(new Uint8Array(ciphertext))}`;
   } catch {
     return plaintext;
   }
@@ -87,13 +83,8 @@ export async function decrypt(maybeEncrypted: string): Promise<string> {
 
   try {
     const [ivBase64, ciphertextBase64] = maybeEncrypted.split(".") as [string, string];
-    const ivBytes = atob(ivBase64);
-    const iv = new Uint8Array(new ArrayBuffer(ivBytes.length));
-    for (let i = 0; i < ivBytes.length; i++) iv[i] = ivBytes.charCodeAt(i);
-
-    const ctBytes = atob(ciphertextBase64);
-    const ciphertext = new Uint8Array(new ArrayBuffer(ctBytes.length));
-    for (let i = 0; i < ctBytes.length; i++) ciphertext[i] = ctBytes.charCodeAt(i);
+    const iv = fromBase64(ivBase64);
+    const ciphertext = fromBase64(ciphertextBase64);
 
     const key = await getOrCreateKeyMaterial();
     const decrypted = await crypto.subtle.decrypt({ name: ALGORITHM, iv }, key, ciphertext);
