@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { format } from "date-fns";
 import { BookOpen, MessageCircle, Leaf, TrendingUp, Calendar, Flame } from "lucide-react";
 import type { UserProfile } from "@/types";
 import type { AppTab } from "@/components/layout/AppShell";
@@ -11,6 +12,7 @@ import {
   formatDateShort,
   moodLabelToEmoji,
   averageMoodScore,
+  todayISO,
   cn,
 } from "@/lib/utils";
 import { MOOD_COLOR_MAP, MOOD_LABEL_MAP } from "@/types";
@@ -32,13 +34,13 @@ export default function Dashboard({ profile, onNavigate }: DashboardProps) {
     [entries]
   );
 
-  // Streak = consecutive days with an entry up to today
   const streak = useMemo(() => {
     const dates = new Set(entries.map((e) => e.date));
-    const msPerDay = 86_400_000;
-    const today = Date.now();
     let count = 0;
-    while (dates.has(new Date(today - count * msPerDay).toISOString().split("T")[0]!)) {
+    while (true) {
+      const d = new Date();
+      d.setDate(d.getDate() - count);
+      if (!dates.has(format(d, "yyyy-MM-dd"))) break;
       count++;
     }
     return count;

@@ -24,20 +24,21 @@ export function moodScoreToLabel(score: MoodScore): MoodLabel {
   return MOOD_LABEL_MAP[score];
 }
 
+const MOOD_EMOJI_MAP: Record<MoodLabel, string> = {
+  overwhelmed: "😰",
+  anxious: "😟",
+  low: "😔",
+  neutral: "😐",
+  calm: "😌",
+  good: "🙂",
+  focused: "🎯",
+  motivated: "💪",
+  joyful: "😊",
+  excellent: "🌟",
+};
+
 export function moodLabelToEmoji(label: MoodLabel): string {
-  const map: Record<MoodLabel, string> = {
-    overwhelmed: "😰",
-    anxious: "😟",
-    low: "😔",
-    neutral: "😐",
-    calm: "😌",
-    good: "🙂",
-    focused: "🎯",
-    motivated: "💪",
-    joyful: "😊",
-    excellent: "🌟",
-  };
-  return map[label];
+  return MOOD_EMOJI_MAP[label];
 }
 
 export function averageMoodScore(scores: readonly MoodScore[]): number {
@@ -92,17 +93,12 @@ export function buildWeeklySummary(
       ? averageMoodScore(weekEntries.map((e) => e.moodScore))
       : 0;
 
-  // Count trigger frequency across all analysed entries
   const triggerCounts = new Map<string, { count: number; category: string }>();
   for (const entry of weekEntries) {
     if (!entry.analysis) continue;
     for (const t of entry.analysis.stressTriggers) {
       const existing = triggerCounts.get(t.trigger);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        triggerCounts.set(t.trigger, { count: 1, category: t.category });
-      }
+      triggerCounts.set(t.trigger, { count: (existing?.count ?? 0) + 1, category: t.category });
     }
   }
 
@@ -119,10 +115,12 @@ export function buildWeeklySummary(
     .filter((e) => e.analysis)
     .map((e) => e.analysis!.sentiment);
 
-  const sentimentCounts = { negative: 0, neutral: 0, positive: 0 };
-  for (const s of sentiments) sentimentCounts[s] += 1;
+  const sentimentCounts = sentiments.reduce(
+    (acc, s) => ({ ...acc, [s]: acc[s] + 1 }),
+    { negative: 0, neutral: 0, positive: 0 } as Record<"negative" | "neutral" | "positive", number>
+  );
   const dominantSentiment = (
-    Object.entries(sentimentCounts) as [keyof typeof sentimentCounts, number][]
+    Object.entries(sentimentCounts) as ["negative" | "neutral" | "positive", number][]
   ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "neutral";
 
   return {

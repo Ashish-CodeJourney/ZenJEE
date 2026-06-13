@@ -23,7 +23,7 @@ export type ChatUserContext = {
 
 export type GeminiHistoryItem = {
   role: "user" | "model";
-  parts: [{ text: string }];
+  parts: Array<{ text: string }>;
 };
 
 const CRISIS_INSTRUCTION = `
@@ -79,7 +79,7 @@ export function convertHistoryToGeminiFormat(
   history: readonly Pick<ChatMessage, "role" | "content">[]
 ): GeminiHistoryItem[] {
   return history.map((msg) => ({
-    role: (msg.role === "assistant" ? "model" : "user") as "user" | "model",
-    parts: [{ text: msg.content }] as [{ text: string }],
+    role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
+    parts: [{ text: msg.content }],
   }));
 }

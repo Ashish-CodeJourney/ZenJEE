@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { Sparkles, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { UserProfile, MoodScore, JournalAnalysis } from "@/types";
 import type { AnalyzeJournalResponse } from "@/types";
@@ -15,7 +15,7 @@ type JournalViewProps = { readonly profile: UserProfile };
 
 const DEBOUNCE_MS = 500;
 
-export default function JournalView({ profile: _ }: JournalViewProps) {
+export default function JournalView(_: JournalViewProps) {
   const { entries, todayEntry, isSaving, saveEntry, attachAnalysis, deleteEntry } = useJournal();
 
   const [content, setContent] = useState(todayEntry?.content ?? "");
@@ -23,31 +23,22 @@ export default function JournalView({ profile: _ }: JournalViewProps) {
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [charCount, setCharCount] = useState(todayEntry?.content.length ?? 0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const handleContentChange = (val: string) => {
-    setContent(val);
-    setCharCount(val.length);
-  };
 
   const handleSaveAndAnalyse = useCallback(async () => {
     if (content.trim().length < 10) return;
     setAnalysisError(null);
 
-    const entry = await saveEntry({
-      date: todayISO(),
-      content: content.trim(),
-      moodScore,
-      tags: [],
-    });
+    const today = todayISO();
+    const trimmed = content.trim();
+    const entry = await saveEntry({ date: today, content: trimmed, moodScore, tags: [] });
 
     setIsAnalysing(true);
     try {
       const res = await fetch("/api/analyze-journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim(), moodScore, date: todayISO() }),
+        body: JSON.stringify({ content: trimmed, moodScore, date: today }),
       });
       const data: AnalyzeJournalResponse = await res.json();
       if (!data.success) {
@@ -74,7 +65,10 @@ export default function JournalView({ profile: _ }: JournalViewProps) {
     [moodScore, saveEntry]
   );
 
-  const pastEntries = entries.filter((e) => e.date !== todayISO());
+  const pastEntries = useMemo(
+    () => entries.filter((e) => e.date !== todayISO()),
+    [entries]
+  );
 
   return (
     <div className="space-y-6">
@@ -100,7 +94,7 @@ export default function JournalView({ profile: _ }: JournalViewProps) {
               id="journal-content"
               value={content}
               onChange={(e) => {
-                handleContentChange(e.target.value);
+                setContent(e.target.value);
                 handleAutoSave(e.target.value);
               }}
               placeholder="What's on your mind today? Talk about your studies, your worries, your small wins…"
@@ -114,7 +108,7 @@ export default function JournalView({ profile: _ }: JournalViewProps) {
               aria-describedby="char-count"
             />
             <p id="char-count" className="text-right text-xs text-slate-400 mt-1" aria-live="polite">
-              {charCount}/5000
+              {content.length}/5000
             </p>
           </div>
 

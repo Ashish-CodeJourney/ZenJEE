@@ -25,24 +25,44 @@ const STORAGE_KEY = "zenjee:crypto:keyMaterial";
 const fromBase64 = (b64: string): Uint8Array<ArrayBuffer> =>
   new Uint8Array([...atob(b64)].map((c) => c.charCodeAt(0)));
 
+const toBase64 = (buf: Uint8Array): string =>
+  btoa(Array.from(buf, (b) => String.fromCharCode(b)).join(""));
+
+let _cachedKey: CryptoKey | null = null;
+
 async function getOrCreateKeyMaterial(): Promise<CryptoKey> {
+  if (_cachedKey) return _cachedKey;
+
   const stored = localStorage.getItem(STORAGE_KEY);
 
   if (stored) {
-    return crypto.subtle.importKey("raw", fromBase64(stored), { name: ALGORITHM }, false, KEY_USAGE);
+    _cachedKey = await crypto.subtle.importKey(
+      "raw",
+      fromBase64(stored),
+      { name: ALGORITHM },
+      false,
+      KEY_USAGE
+    );
+    return _cachedKey;
   }
 
   const key = await crypto.subtle.generateKey({ name: ALGORITHM, length: 256 }, true, KEY_USAGE);
   const exported = await crypto.subtle.exportKey("raw", key);
-  const base64 = btoa(Array.from(new Uint8Array(exported), (b) => String.fromCharCode(b)).join(""));
-  localStorage.setItem(STORAGE_KEY, base64);
-  return key;
+  localStorage.setItem(STORAGE_KEY, toBase64(new Uint8Array(exported)));
+  _cachedKey = key;
+  return _cachedKey;
 }
 
 function randomIV(): Uint8Array<ArrayBuffer> {
   const iv = new Uint8Array(new ArrayBuffer(12));
   crypto.getRandomValues(iv);
   return iv;
+
+}
+
+/** Resets the in-memory key cache — used in tests to simulate key rotation. */
+export function _resetCryptoKeyCache(): void {
+  _cachedKey = null;
 }
 
 // -----------------------------------------------------------------------------
@@ -64,8 +84,6 @@ export async function encrypt(plaintext: string): Promise<string> {
     const encoded = new TextEncoder().encode(plaintext);
     const ciphertext = await crypto.subtle.encrypt({ name: ALGORITHM, iv }, key, encoded);
 
-    const toBase64 = (buf: Uint8Array) =>
-      btoa(Array.from(buf, (b) => String.fromCharCode(b)).join(""));
     return `${toBase64(iv)}.${toBase64(new Uint8Array(ciphertext))}`;
   } catch {
     return plaintext;
@@ -82,7 +100,9 @@ export async function decrypt(maybeEncrypted: string): Promise<string> {
   if (!maybeEncrypted.includes(".")) return maybeEncrypted; // not encrypted
 
   try {
-    const [ivBase64, ciphertextBase64] = maybeEncrypted.split(".") as [string, string];
+    const dotIndex = maybeEncrypted.indexOf(".");
+    const ivBase64 = maybeEncrypted.slice(0, dotIndex);
+    const ciphertextBase64 = maybeEncrypted.slice(dotIndex + 1);
     const iv = fromBase64(ivBase64);
     const ciphertext = fromBase64(ciphertextBase64);
 

@@ -2,8 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
-import type { ChatMessage, ChatSession, MoodScore, UserProfile } from "@/types";
-import type { ChatResponse } from "@/types";
+import type { ChatMessage, ChatSession, ChatResponse, MoodScore, UserProfile } from "@/types";
 
 export type ChatHook = {
   session: ChatSession;
