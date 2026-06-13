@@ -12,7 +12,6 @@ import {
   formatDateShort,
   moodLabelToEmoji,
   averageMoodScore,
-  todayISO,
   cn,
 } from "@/lib/utils";
 import { MOOD_COLOR_MAP, MOOD_LABEL_MAP } from "@/types";
